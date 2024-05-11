@@ -1,23 +1,58 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { useUserStore } from '@/stores'
+// createRouter 创建路由实例
+// 配置 history 模式
+// 1.history模式：createWebHistory  地址栏不带 #
+// 2.hash模式： createWebHashHistory 地址栏带 #
 
+// vite 中的环境变量 import.meta.env.BASE_URL  就是 vite.config.js 中的 base 配置
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView
+      path: '/login',
+      component: () => import('@/views/login/LoginPage.vue')
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue')
+      path: '/',
+      component: () => import('@/views/layout/LayoutContainer.vue'),
+      redirect: '/article/manage',
+      children: [
+        {
+          path: '/article/manage',
+          component: () => import('@/views/article/ArticleManage.vue')
+        },
+        {
+          path: '/article/channel',
+          component: () => import('@/views/article/ArticleChannel.vue')
+        },
+        {
+          path: '/user/profile',
+          component: () => import('@/views/user/UserProfile.vue')
+        },
+        {
+          path: '/user/avatar',
+          component: () => import('@/views/user/UserAvatar.vue')
+        },
+        {
+          path: '/user/password',
+          component: () => import('@/views/user/UserPassword.vue')
+        }
+      ]
     }
   ]
 })
 
+// 登录访问拦截 => 默认是直接放行
+// 根据返回值决定，是放行还是拦截
+// 返回值：
+//      1. undefined / true 直接放行
+//      2.false 拦截回from的地址页面
+//      3.具体路径 获 路径对象  拦截到对应的地址
+//          '/login'  {name:'login}
+router.beforeEach((to) => {
+  // 如果没有token，且访问的时非登录页面， 拦截到登录， 其他情况正常放行
+  const userStore = useUserStore()
+  if (!userStore.token && to.path !== '/login') return '/login'
+})
 export default router
